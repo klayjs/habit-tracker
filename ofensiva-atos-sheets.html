@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ofensiva de Atos</title>
+<style>
+  :root{
+    --verde: #58CC02;
+    --verde-escuro: #46A302;
+    --laranja: #FF9600;
+    --laranja-fogo: #FF4B4B;
+    --amarelo: #FFC800;
+    --fundo: #FFFFFF;
+    --fundo-card: #F7F7F7;
+    --texto: #3C3C3C;
+    --texto-fraco: #AFAFAF;
+    --borda: #E5E5E5;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: var(--fundo);
+    color: var(--texto);
+    display:flex;
+    justify-content:center;
+    padding: 20px 12px;
+  }
+  .card{
+    width:100%;
+    max-width: 420px;
+    background: var(--fundo);
+    border: 2px solid var(--borda);
+    border-radius: 20px;
+    padding: 22px 20px 18px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .eyebrow{
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--texto-fraco);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .flame-wrap{ position:relative; width: 130px; height: 130px; margin: 8px auto 4px; }
+  .flame-svg{
+    width:100%; height:100%;
+    filter: drop-shadow(0 6px 10px rgba(255,75,75,0.25));
+    animation: flicker 2.4s ease-in-out infinite;
+    transform-origin: 50% 85%;
+  }
+  .flame-svg.off{ filter:none; animation:none; }
+  @keyframes flicker{
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1.03, 0.98) rotate(-1deg); }
+    50% { transform: scale(0.98, 1.02) rotate(1deg); }
+    75% { transform: scale(1.02, 0.97) rotate(-0.5deg); }
+  }
+  .streak-number{ font-size: 56px; font-weight: 900; line-height: 1; color: var(--laranja-fogo); letter-spacing: -1px; }
+  .streak-number.zero{ color: var(--texto-fraco); }
+  .streak-label{ font-size: 15px; font-weight: 700; margin-top: 2px; }
+  .streak-sub{ font-size: 13px; color: var(--texto-fraco); margin-top: 2px; min-height: 16px; }
+  .week-row{ display:flex; justify-content: space-between; gap: 6px; margin: 20px 0 14px; }
+  .day{ flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .day-name{ font-size: 11px; font-weight: 800; color: var(--texto-fraco); text-transform: uppercase; }
+  .day-dot{
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 2px solid var(--borda); background: var(--fundo-card);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 14px; color: var(--texto-fraco);
+    transition: all .15s ease;
+  }
+  .day-dot.done{ background: var(--laranja-fogo); border-color: var(--laranja-fogo); color: #fff; }
+  .day-dot.today{ border-color: var(--laranja-fogo); box-shadow: 0 0 0 3px rgba(255,75,75,0.15); }
+  .day-dot.today.clickable{ cursor: pointer; }
+  .day-dot.today.clickable:hover{ transform: scale(1.08); }
+  .progress-block{ background: var(--fundo-card); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; text-align:left; }
+  .progress-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom: 8px; }
+  .progress-top .meta-title{ font-size: 13px; font-weight: 800; }
+  .progress-top .meta-count{ font-size: 12px; font-weight: 700; color: var(--texto-fraco); }
+  .progress-bar-bg{ width:100%; height: 12px; background: var(--borda); border-radius: 8px; overflow:hidden; }
+  .progress-bar-fill{ height:100%; background: linear-gradient(90deg, var(--amarelo), var(--laranja)); border-radius: 8px; transition: width .4s ease; }
+  .cta{
+    width:100%; border:none; border-radius: 14px; padding: 14px;
+    font-size: 16px; font-weight: 800; letter-spacing: 0.3px; cursor:pointer;
+    transition: transform .08s ease, box-shadow .15s ease;
+    box-shadow: 0 4px 0 var(--verde-escuro);
+  }
+  .cta.ready{ background: var(--verde); color: #fff; }
+  .cta.ready:active{ transform: translateY(3px); box-shadow: 0 1px 0 var(--verde-escuro); }
+  .cta.done{ background: var(--fundo-card); color: var(--texto-fraco); box-shadow:none; border: 2px solid var(--borda); cursor:default; }
+  .cta[disabled]{ opacity:0.7; }
+  .badges{ display:flex; justify-content:center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .badge{ font-size: 11px; font-weight: 800; padding: 5px 10px; border-radius: 20px; background: var(--fundo-card); color: var(--texto-fraco); border: 1.5px solid var(--borda); }
+  .badge.unlocked{ background: rgba(88,204,2,0.12); color: var(--verde-escuro); border-color: transparent; }
+  .confetti{ position:absolute; top:0; left:0; right:0; bottom:0; pointer-events:none; overflow:hidden; }
+  .confetti span{ position:absolute; top:-10px; width:8px; height:8px; opacity:0.9; animation: fall 1.6s ease-in forwards; }
+  @keyframes fall{ to{ transform: translateY(320px) rotate(340deg); opacity:0; } }
+  .estado-msg{ font-size: 13px; color: var(--texto-fraco); padding: 30px 0; }
+  .estado-msg.erro{ color: var(--laranja-fogo); }
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <div id="carregando" class="estado-msg">Carregando ofensiva...</div>
+
+  <div id="conteudo" class="hidden">
+    <div class="eyebrow" id="tituloHabito">Ofensiva de atos</div>
+
+    <div class="flame-wrap">
+      <svg class="flame-svg" id="flameSvg" viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="flameGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" stop-color="#FF9600"/>
+            <stop offset="55%" stop-color="#FF4B4B"/>
+            <stop offset="100%" stop-color="#FFC800"/>
+          </linearGradient>
+          <linearGradient id="flameGradOff" x1="0%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" stop-color="#D8D8D8"/>
+            <stop offset="100%" stop-color="#EFEFEF"/>
+          </linearGradient>
+        </defs>
+        <path id="flamePath" fill="url(#flameGrad)" d="M50 6C50 6 26 30 26 54C26 71 37 82 50 82C63 82 74 71 74 54C74 46 70 40 66 36C66 46 60 52 54 52C48 52 44 47 46 40C48 33 52 28 50 6Z"/>
+        <path fill="#FFE8A3" opacity="0.85" d="M50 46C50 46 41 55 41 65C41 72 45 76 50 76C55 76 59 72 59 65C59 61 57 58 55 56C55 61 52 64 50 64C47 64 46 61 47 58C48 54 50 52 50 46Z"/>
+      </svg>
+    </div>
+
+    <div class="streak-number" id="streakNumber">0</div>
+    <div class="streak-label" id="streakLabel">dias de ofensiva</div>
+    <div class="streak-sub" id="streakSub"></div>
+
+    <div class="week-row" id="weekRow"></div>
+
+    <div class="progress-block">
+      <div class="progress-top">
+        <span class="meta-title">Próxima meta</span>
+        <span class="meta-count" id="metaCount">0 / 7</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <button class="cta ready" id="ctaBtn">Registrar ato de hoje</button>
+
+    <div class="badges" id="badges"></div>
+  </div>
+
+  <div id="erro" class="estado-msg erro hidden"></div>
+</div>
+
+<script>
+(function(){
+  var params = new URLSearchParams(window.location.search);
+  var API_URL = params.get('api');            // URL /exec do Apps Script
+  var TITULO = params.get('titulo') || 'Ofensiva de atos';
+
+  var milestones = [3, 7, 14, 30, 50, 100];
+  var diasSemana = ["D","S","T","Q","Q","S","S"];
+  var diasSemanaNomes = ["dom","seg","ter","qua","qui","sex","sáb"];
+
+  var carregandoEl = document.getElementById('carregando');
+  var conteudoEl = document.getElementById('conteudo');
+  var erroEl = document.getElementById('erro');
+  var tituloEl = document.getElementById('tituloHabito');
+  var flameSvg = document.getElementById('flameSvg');
+  var flamePath = document.getElementById('flamePath');
+  var streakNumber = document.getElementById('streakNumber');
+  var streakLabel = document.getElementById('streakLabel');
+  var streakSub = document.getElementById('streakSub');
+  var weekRow = document.getElementById('weekRow');
+  var progressFill = document.getElementById('progressFill');
+  var metaCount = document.getElementById('metaCount');
+  var ctaBtn = document.getElementById('ctaBtn');
+  var badgesEl = document.getElementById('badges');
+  var card = document.getElementById('card');
+
+  tituloEl.textContent = TITULO;
+
+  if (!API_URL){
+    mostrarErro('Faltou o parâmetro ?api= na URL do embed, apontando para a URL /exec do Apps Script.');
+    return;
+  }
+
+  function mostrarErro(msg){
+    carregandoEl.classList.add('hidden');
+    conteudoEl.classList.add('hidden');
+    erroEl.classList.remove('hidden');
+    erroEl.textContent = msg;
+  }
+
+  function proximaMeta(streak){
+    for (var i=0; i<milestones.length; i++){
+      if (streak < milestones[i]) return milestones[i];
+    }
+    return milestones[milestones.length-1] + 50;
+  }
+  function metaAnterior(streak){
+    var prev = 0;
+    for (var i=0; i<milestones.length; i++){
+      if (streak < milestones[i]) return prev;
+      prev = milestones[i];
+    }
+    return milestones[milestones.length-1];
+  }
+
+  function render(data){
+    var indiceHoje = new Date(data.today + 'T00:00:00').getDay();
+
+    // chama
+    if (data.streak > 0){
+      flameSvg.classList.remove('off');
+      flamePath.setAttribute('fill', 'url(#flameGrad)');
+    } else {
+      flameSvg.classList.add('off');
+      flamePath.setAttribute('fill', 'url(#flameGradOff)');
+    }
+
+    // números
+    streakNumber.textContent = data.streak;
+    streakNumber.classList.toggle('zero', data.streak === 0);
+    streakLabel.textContent = data.streak === 1 ? 'dia de ofensiva' : 'dias de ofensiva';
+    if (data.todayDone){
+      streakSub.textContent = 'Ato de hoje registrado. Volte amanhã!';
+    } else if (data.streak === 0){
+      streakSub.textContent = 'Registre seu ato de hoje para começar';
+    } else {
+      streakSub.textContent = 'Não perca sua ofensiva — registre o ato de hoje';
+    }
+
+    // semana
+    weekRow.innerHTML = '';
+    for (var i=0; i<7; i++){
+      var dayWrap = document.createElement('div');
+      dayWrap.className = 'day';
+      var nameEl = document.createElement('div');
+      nameEl.className = 'day-name';
+      nameEl.textContent = diasSemana[i];
+      var dot = document.createElement('div');
+      dot.className = 'day-dot';
+      var isToday = (i === indiceHoje);
+      var isDone = data.completedDays.indexOf(i) !== -1;
+      if (isDone) dot.classList.add('done');
+      if (isToday) dot.classList.add('today');
+      if (isToday && !isDone) dot.classList.add('clickable');
+      dot.textContent = isDone ? '✓' : '';
+      dot.title = diasSemanaNomes[i];
+      if (isToday && !isDone){
+        dot.addEventListener('click', registrarAto);
+      }
+      dayWrap.appendChild(nameEl);
+      dayWrap.appendChild(dot);
+      weekRow.appendChild(dayWrap);
+    }
+
+    // progresso
+    var base = metaAnterior(data.streak);
+    var alvo = proximaMeta(data.streak);
+    var pct = Math.min(100, Math.round(((data.streak - base) / (alvo - base)) * 100));
+    progressFill.style.width = pct + '%';
+    metaCount.textContent = data.streak + ' / ' + alvo;
+
+    // badges
+    badgesEl.innerHTML = '';
+    milestones.forEach(function(m){
+      var b = document.createElement('span');
+      b.className = 'badge' + (data.streak >= m ? ' unlocked' : '');
+      b.textContent = m + (m===1?' dia':' dias');
+      badgesEl.appendChild(b);
+    });
+
+    // botão
+    if (data.todayDone){
+      ctaBtn.textContent = 'Ato de hoje concluído ✓';
+      ctaBtn.className = 'cta done';
+      ctaBtn.disabled = true;
+    } else {
+      ctaBtn.textContent = 'Registrar ato de hoje';
+      ctaBtn.className = 'cta ready';
+      ctaBtn.disabled = false;
+    }
+
+    carregandoEl.classList.add('hidden');
+    erroEl.classList.add('hidden');
+    conteudoEl.classList.remove('hidden');
+  }
+
+  function lancarConfete(){
+    var wrap = document.createElement('div');
+    wrap.className = 'confetti';
+    var cores = ['#58CC02','#1CB0F6','#FF9600','#FFC800','#FF4B4B'];
+    for (var i=0; i<24; i++){
+      var s = document.createElement('span');
+      s.style.left = (Math.random()*100) + '%';
+      s.style.background = cores[Math.floor(Math.random()*cores.length)];
+      s.style.animationDelay = (Math.random()*0.3) + 's';
+      s.style.borderRadius = (Math.random() > 0.5 ? '50%' : '2px');
+      wrap.appendChild(s);
+    }
+    card.appendChild(wrap);
+    setTimeout(function(){ wrap.remove(); }, 1800);
+  }
+
+  function carregarEstado(){
+    return fetch(API_URL + '?action=state', { method: 'GET' })
+      .then(function(res){
+        if (!res.ok) throw new Error('Falha ao ler a planilha (' + res.status + ')');
+        return res.json();
+      });
+  }
+
+  function registrarAto(){
+    ctaBtn.disabled = true;
+    fetch(API_URL + '?action=register', { method: 'GET' })
+      .then(function(res){
+        if (!res.ok) throw new Error('Falha ao registrar (' + res.status + ')');
+        return res.json();
+      })
+      .then(function(data){
+        render(data);
+        lancarConfete();
+      })
+      .catch(function(err){
+        mostrarErro(err.message);
+      });
+  }
+
+  ctaBtn.addEventListener('click', registrarAto);
+
+  carregarEstado()
+    .then(render)
+    .catch(function(err){
+      mostrarErro(err.message);
+    });
+})();
+</script>
+
+</body>
+</html>
