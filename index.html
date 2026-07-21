@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ofensiva de hábitos</title>
+<title>Ofensiva de Atos</title>
 <style>
   :root{
     --verde: #58CC02;
@@ -307,21 +307,42 @@
     setTimeout(function(){ wrap.remove(); }, 1800);
   }
 
+  // O Apps Script não envia cabeçalho CORS, então fetch() cross-origin
+  // é bloqueado pelo navegador. JSONP contorna isso carregando a resposta
+  // como uma tag <script>, que não passa pela checagem de CORS.
+  function jsonp(url){
+    return new Promise(function(resolve, reject){
+      var callbackName = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*100000);
+      var script = document.createElement('script');
+
+      var limpar = function(){
+        delete window[callbackName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+      };
+
+      window[callbackName] = function(data){
+        limpar();
+        resolve(data);
+      };
+
+      script.onerror = function(){
+        limpar();
+        reject(new Error('Não foi possível conectar com a planilha. Confira se a URL do Apps Script (api=) está correta e terminando em /exec.'));
+      };
+
+      var separador = url.indexOf('?') >= 0 ? '&' : '?';
+      script.src = url + separador + 'callback=' + callbackName;
+      document.body.appendChild(script);
+    });
+  }
+
   function carregarEstado(){
-    return fetch(API_URL + '?action=state', { method: 'GET' })
-      .then(function(res){
-        if (!res.ok) throw new Error('Falha ao ler a planilha (' + res.status + ')');
-        return res.json();
-      });
+    return jsonp(API_URL + '?action=state');
   }
 
   function registrarAto(){
     ctaBtn.disabled = true;
-    fetch(API_URL + '?action=register', { method: 'GET' })
-      .then(function(res){
-        if (!res.ok) throw new Error('Falha ao registrar (' + res.status + ')');
-        return res.json();
-      })
+    jsonp(API_URL + '?action=register')
       .then(function(data){
         render(data);
         lancarConfete();
